@@ -2,6 +2,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -53,37 +54,13 @@ public class BaconNumber {
 	private boolean recenter(String v) {
 		if (graph.contains(v.toLowerCase())) {
 			center = v.toLowerCase();
+			lookup = new HashMap<String, Stack<String>>();
+			distLookup = new HashMap<String, Integer>();
 			return true;
 		} else {
 			return false;
 		}
 	}
-	/**
-	private boolean dist(String v, int thisDist) {			
-		while (!queue.isEmpty()) {
-			//String s = queue.remove(queue.size()-1);
-			visited.add(s);
-			if (v.equals(center)) {
-				this.distance = thisDist;
-				path.clear();
-				path.push(v);
-				return true;
-			}
-			if (!visited.contains(s)) {
-				if (dist(s, thisDist + 1)) {
-					path.push(v);
-					ArrayList<Object> arr = new ArrayList<Object>();
-					arr.add(this.distance - thisDist);
-					arr.addAll(path);
-					lookup.put(v, arr);
-					return true;
-				}
-			}
-		}
-			
-		return false;
-	}
-	*/
 	
 	//Vertex class inspired by the book
 	class Vertex {
@@ -197,8 +174,33 @@ public class BaconNumber {
 		}
 	}
 	
-	public void avgdist(String center) {
-		recenter(center);
+	public void topcenter(int n) {
+		String prev = center;
+		int count = 0;
+		ArrayList<Float> avgs = new ArrayList<Float>();
+		HashMap<Float, String> tab = new HashMap<Float, String>();
+		
+		for (String s : graph.getVerticies()) {
+			if (s.charAt(s.indexOf("(") + 1) != '1' && s.charAt(s.indexOf("(") + 1) != '2') {
+				float d = avgdist(s);
+				avgs.add(d);
+				tab.put(d, s);
+			}
+			count++;
+			if (count >= 500 && count % 500 == 0) {
+				System.out.println(Math.round(((float) count/graph.size())*100) + "% complete...");
+			}
+		}
+		
+		Collections.sort(avgs);
+		for (int i = 0; i < n; i++) {
+			System.out.println(avgs.get(i) + " " + tab.get(avgs.get(i)));
+		}
+		recenter(prev);
+	}
+	
+	public float avgdist(String c) {
+		recenter(c);
 		int avg = 0;
 		int count = 0;
 		reachable = 0;
@@ -213,12 +215,9 @@ public class BaconNumber {
 				avg += current;
 				count++;
 			}
-			if (count >= 750 && count % 750 == 0) {
-				System.out.println(Math.round(((float) count/graph.size())*100) + "% complete...");
-			}
 		}
 		
-		System.out.println("" + ((float) avg/count) + " " + center + " (" + reachable + ", " + unreachable + ")");
+		return (float) avg/count;
 	}
 	
 	public void avgdist() {
@@ -305,6 +304,9 @@ public class BaconNumber {
 		System.out.println("Welcome to the Kevin Bacon Game!");
 		System.out.println("Use \"find [name]\" to find the Bacon number of [name]");
 		System.out.println("Use \"recenter [name]\" to center the game at [name]");
+		System.out.println("Use \"avgdist\" to find the average distance to the current center");
+		System.out.println("Use \"table\" to display a table of how many actors there are per bacon number");
+		System.out.println("Use \"topcenter [num]\" to find the top [num] centers in the data");
 		System.out.println();
 		while(scanny.hasNextLine()) {
 			String s = scanny.nextLine().toLowerCase();
@@ -320,13 +322,19 @@ public class BaconNumber {
 				}
 				bacon.recenter(s.substring(9).toLowerCase());
 				System.out.println("New center: " + s.substring(9).toLowerCase());
-				System.out.println();
 			} else if (s.contains("avgdist")) {
 				System.out.println("Finding average distance...");
 				bacon.avgdist();
 			} else if (s.contains("table")) {
 				System.out.println("Finding distance table...");
 				bacon.table();
+			} else if (s.contains("topcenter")) {
+				if (s.length() <= 10) {
+					break;
+				}
+				String[] words = s.split("\\s+");
+				System.out.println("Finding top " + words[1] + " centers...");
+				bacon.topcenter(Integer.parseInt(words[1]));
 			} else {
 				System.out.println("\"" + s + "\" is an invalid command");
 			}
